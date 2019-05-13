@@ -1,0 +1,44 @@
+Bootstrap: docker
+From: ubuntu:latest
+
+%post
+apt-get update && apt-get -y install wget build-essential
+apt-get install python3 python3-pip bioperl hmmer libmoose-perl git -y
+pip3 install biopython networkx sortedcontainers joblib
+
+git clone https://bitbucket.org/sonnhammergroup/domainoid.git /home/domainoid
+
+wget -P  /home/pfam/Pfam  ftp://ftp.ebi.ac.uk/pub/databases/Pfam/releases/Pfam32.0/Pfam-A.hmm.gz
+wget -P  /home/pfam/Pfam ftp://ftp.ebi.ac.uk/pub/databases/Pfam/releases/Pfam32.0/Pfam-A.hmm.dat.gz
+wget -P  /home/pfam/Pfam ftp://ftp.ebi.ac.uk/pub/databases/Pfam/releases/Pfam32.0/active_site.dat.gz
+wget -P  /home/pfam ftp://ftp.ebi.ac.uk/pub/databases/Pfam/Tools/PfamScan.tar.gz
+
+cd /home/pfam
+tar xvfz PfamScan.tar.gz
+
+cd /home/pfam/Pfam
+gunzip -d Pfam-A.hmm.gz
+gunzip -d Pfam-A.hmm.dat.gz
+gunzip -d active_site.dat.gz
+hmmpress Pfam-A.hmm
+
+wget -P  /home/blast ftp://ftp.ncbi.nlm.nih.gov/blast/executables/legacy.NOTSUPPORTED/2.2.18/blast-2.2.18-x64-linux.tar.gz
+cd /home/blast
+tar xvfz blast-2.2.18-x64-linux.tar.gz 
+
+cp -a /home/blast/blast-2.2.18/bin/. /home/domainoid/inParanoid
+cp /home/blast/blast-2.2.18/data/BLOSUM45 /home/domainoid/inParanoid
+cp /home/blast/blast-2.2.18/data/BLOSUM62 /home/domainoid/inParanoid
+cp /home/blast/blast-2.2.18/data/BLOSUM80 /home/domainoid/inParanoid
+cp /home/blast/blast-2.2.18/data/PAM30 /home/domainoid/inParanoid
+cp /home/blast/blast-2.2.18/data/PAM70 /home/domainoid/inParanoid
+
+%environment
+export PATH=.:$PATH
+export LC_ALL=C
+export LANGUAGE=C
+
+%runscript
+cd /home/domainoid/
+echo "Running: $*"
+python3 runDomainoid.py "$@"
